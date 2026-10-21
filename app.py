@@ -3,7 +3,7 @@ import requests
 
 st.set_page_config(page_title="圖片盜用檢查工具", layout="wide")
 st.title("🔍 批次圖片盜用檢查工具")
-st.markdown("上傳多張圖片，自動透過 Google Lens 搜尋網路上是否有未經授權的使用。")
+st.markdown("上傳多張圖片，自動透過 Google 反向搜圖尋找網路上是否有未經授權的使用。")
 
 # 設定 API Keys
 with st.sidebar:
@@ -27,12 +27,12 @@ def upload_to_imgbb(file_bytes, api_key):
 def reverse_image_search(image_url, api_key):
     url = "https://serpapi.com/search"
     params = {
-        "engine": "google_lens",
-        "url": image_url,
+        "engine": "google_reverse_image",  # 換成專門找相同圖片的傳統反向搜圖
+        "image_url": image_url,            # 參數名稱對應修改
         "api_key": api_key
     }
     response = requests.get(url, params=params)
-    return response.json().get("visual_matches", [])
+    return response.json().get("image_results", []) # 抓取完全相符的網頁結果
 
 if st.button("🚀 開始全網掃描", type="primary"):
     if not imgbb_key or not serpapi_key:
@@ -57,12 +57,12 @@ if st.button("🚀 開始全網掃描", type="primary"):
                         matches = reverse_image_search(public_url, serpapi_key)
                         
                         if matches:
-                            st.success(f"發現 {len(matches)} 個可能使用此圖的來源：")
-                            for match in matches[:5]:  # 只顯示前5筆
+                            st.success(f"發現 {len(matches)} 個使用此圖的網頁來源：")
+                            for match in matches[:10]:  # 顯示前10筆
                                 title = match.get("title", "未知標題")
                                 link = match.get("link", "#")
                                 st.markdown(f"- [{title}]({link})")
                         else:
-                            st.info("太棒了！網路上目前沒有找到這張圖片的其他來源。")
+                            st.info("太棒了！網路上目前沒有找到這張圖片被其他網頁使用。")
                     else:
                         st.error("圖片暫存失敗，請檢查 ImgBB API Key。")
